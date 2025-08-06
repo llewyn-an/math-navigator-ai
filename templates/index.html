@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Navigator AI</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pretendard 폰트 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendardvariable@v1.3.8/dist/web/variable/pretendardvariable.css" />
+    <!-- KaTeX for LaTeX math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMckDpbOJCUAZXLnLe84EqcB1BDQRgY/eBCeQWFCVebO2EV6T" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <!-- KaTeX auto-render extension -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* 전체 폰트 및 기본 스타일 */
+        body {
+            font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+            font-weight: 400;
+            line-height: 1.4; /* 줄간격 줄임 */
+            letter-spacing: -0.01em;
+            overflow-x: hidden;
+        }
+
+        /* 레이아웃 스타일 */
+        .main-layout {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            background: #f8fafc;
+            min-width: 0;
+            width: calc(100vw - 280px);
+            max-width: calc(100vw - 280px);
+            overflow-x: hidden;
+        }
+
+        /* 사용자 타입 선택 버튼 스타일 - 개선된 디자인 */
+        .user-type-selector {
+            position: absolute;
+            top: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%); /* 가운데 정렬 */
+            display: flex;
+            background: rgba(15, 23, 42, 0.8); /* 사이드바와 조화로운 어두운 반투명 */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 24px;
+            padding: 0.25rem;
+            gap: 0.25rem;
+            z-index: 1100;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .user-type-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 18px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #cbd5e1;
+            background: transparent;
+            border: none;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-type-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .user-type-btn:hover::before {
+            opacity: 1;
+        }
+
+        .user-type-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .user-type-btn:hover:not(.active) {
+            color: #60a5fa;
+            transform: scale(1.02);
+        }
+
+        /* 사이드바 스타일 */
+        .sidebar-logo {
+            padding: 1rem 1.5rem 0.75rem 1.5rem;
+            border-bottom: 1px solid #334155;
+            margin-top: 2.75rem; /* 가운데 정렬된 사용자 타입 버튼과 충분한 간격 */
+        }
+
+        .sidebar-logo h1 {
+            font-size: 1.25rem; /* 크기 줄임 */
+            font-weight: 700;
+            color: #60a5fa;
+            margin: 0;
+        }
+
+        .sidebar-logo p {
+            font-size: 0.75rem; /* 크기 줄임 */
+        }
+
+        .sidebar-menu {
+            padding: 0.5rem 0; /* 패딩 줄임 */
+        }
+
+        .menu-item {
+            padding: 0.5rem 1.5rem; /* 패딩 줄임 */
+            margin: 0.2rem 0.5rem; /* 마진 줄임 */
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+        }
+
+        .menu-item.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .menu-submenu {
+            margin-left: 1rem;
+            border-left: 2px solid #334155;
+            padding-left: 1rem;
+        }
+
+        .submenu-item {
+            padding: 0.3rem 1rem; /* 패딩 줄임 */
+            margin: 0.1rem 0; /* 마진 줄임 */
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+
+        .submenu-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+        }
+
+        .submenu-item.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        /* 공통 컨텐츠 스타일 개선 */
+        .content-area {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .content-area h1, .content-area h2, .content-area h3 {
+            font-weight: 700;
+            margin-top: 0.75rem; /* 마진 줄임 */
+            margin-bottom: 0.375rem; /* 마진 줄임 */
+            color: #1e293b;
+            line-height: 1.2; /* 줄간격 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .content-area h1 { font-size: 1.875rem; color: #1e40af; }
+        .content-area h2 { font-size: 1.375rem; color: #2563eb; }
+        .content-area h3 { font-size: 1.125rem; color: #3b82f6; }
+
+        .content-area p {
+            margin-bottom: 0.5rem; /* 마진 줄임 */
+            line-height: 1.4; /* 줄간격 줄임 */
+            text-align: justify;
+            word-spacing: 0.05em;
+            color: #374151;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .content-area ul, .content-area ol {
+            margin: 0.5rem 0; /* 마진 줄임 */
+            padding-left: 1.5rem; /* 패딩 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .content-area li {
+            margin-bottom: 0.2rem; /* 마진 줄임 */
+            line-height: 1.3; /* 줄간격 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .content-area table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0; /* 마진 줄임 */
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-area th {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 0.75rem; /* 패딩 줄임 */
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .content-area td {
+            padding: 0.75rem; /* 패딩 줄임 */
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .content-area tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .content-area tr:hover {
+            background-color: #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+
+        .content-area code {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #1e293b;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+            font-size: 0.9em;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* 채팅 관련 스타일 */
+        .chat-bubble { 
+            max-width: 90%; 
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        .chat-bubble-ai {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .blinking-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2rem;
+            background-color: #333;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { background-color: transparent }
+            50% { background-color: #333; }
+        }
+
+        /* AI 응답 스타일링 개선 - 참고서 스타일 */
+        .ai-response {
+            font-family: "Pretendard Variable", Pretendard, sans-serif;
+            line-height: 1.5; /* 줄간격 줄임 */
+            letter-spacing: -0.01em;
+            color: #374151;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* 제목 스타일링 */
+        .ai-response h1, .ai-response h2, .ai-response h3, .ai-response h4 {
+            font-weight: 700;
+            margin: 0.75rem 0 0.375rem 0; /* 마진 줄임 */
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.25rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .ai-response h1 { font-size: 1.5rem; color: #1e40af; }
+        .ai-response h2 { font-size: 1.25rem; color: #2563eb; }
+        .ai-response h3 { font-size: 1.125rem; color: #3b82f6; }
+
+        /* 문단 스타일링 */
+        .ai-response p {
+            margin-bottom: 0.75rem; /* 마진 줄임 */
+            text-align: justify;
+            word-spacing: 0.05em;
+            line-height: 1.4; /* 줄간격 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        /* 리스트 스타일링 */
+        .ai-response ul, .ai-response ol {
+            margin: 0.5rem 0 0.75rem 0; /* 마진 줄임 */
+            padding-left: 1.5rem; /* 패딩 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .ai-response li {
+            margin-bottom: 0.2rem; /* 마진 줄임 */
+            line-height: 1.3; /* 줄간격 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .ai-response ul li {
+            list-style-type: none;
+            position: relative;
+        }
+
+        .ai-response ul li::before {
+            content: "▪";
+            color: #3b82f6;
+            font-size: 1.2em;
+            position: absolute;
+            left: -1.5rem;
+            top: 0;
+        }
+
+        /* 강조 텍스트 스타일링 */
+        .ai-response strong, .ai-response b {
+            font-weight: 700;
+            color: #1e40af;
+            background: linear-gradient(120deg, transparent 0%, transparent 50%, #dbeafe 50%, #dbeafe 100%);
+            background-size: 200% 100%;
+            background-position: 100% 0;
+            transition: background-position 0.3s ease;
+        }
+
+        .ai-response em, .ai-response i {
+            font-style: italic;
+            color: #7c3aed;
+            font-weight: 500;
+        }
+
+        /* 코드 블록 스타일링 */
+        .ai-response code {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #1e293b;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9em;
+            border: 1px solid #cbd5e1;
+        }
+
+        .ai-response pre {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #e2e8f0;
+            padding: 1rem; /* 패딩 줄임 */
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1rem 0; /* 마진 줄임 */
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-response pre code {
+            background: none;
+            border: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* 인용문 스타일링 */
+        .ai-response blockquote {
+            border-left: 4px solid #3b82f6;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 1rem 1.5rem; /* 패딩 줄임 */
+            margin: 1rem 0; /* 마진 줄임 */
+            font-style: italic;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* 테이블 스타일링 */
+        .ai-response table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0; /* 마진 줄임 */
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-response th {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 0.75rem; /* 패딩 줄임 */
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .ai-response td {
+            padding: 0.75rem; /* 패딩 줄임 */
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .ai-response tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .ai-response tr:hover {
+            background-color: #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+
+        /* 답안 박스 */
+        .ai-response .answer {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 1rem; /* 패딩 줄임 */
+            margin: 1rem 0; /* 마진 줄임 */
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+        }
+
+        .ai-response .answer::before {
+            content: "✓ 답: ";
+            color: #1e40af;
+            font-weight: 700;
+        }
+
+        /* 아코디언 스타일 개선 */
+        .accordion-item {
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem; /* 마진 줄임 */
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .accordion-item:hover {
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .accordion-header {
+            padding: 0.75rem 1rem; /* 패딩 줄임 */
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header:hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+
+        /* 아코디언 개선 */
+        .accordion-content {
+            padding: 0.75rem; /* 패딩 줄임 */
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+            font-size: 0.95rem;
+            line-height: 1.4; /* 줄간격 줄임 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .accordion-content.active {
+            display: block;
+        }
+
+        .accordion-icon {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+            color: #3b82f6;
+        }
+
+        .accordion-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 섹션별 색상 구분 강화 */
+        .section-학습목표 .accordion-header { border-left: 6px solid #10b981; }
+        .section-개념설명 .accordion-header { border-left: 6px solid #3b82f6; }
+        .section-대표예제 .accordion-header { border-left: 6px solid #f59e0b; }
+        .section-연습문제 .accordion-header { border-left: 6px solid #ef4444; }
+        .section-정답및해설 .accordion-header { border-left: 6px solid #8b5cf6; }
+        .section-마스터리드릴 .accordion-header { border-left: 6px solid #06b6d4; }
+        .section-진단체크 .accordion-header { border-left: 6px solid #84cc16; }
+        .section-확장활동 .accordion-header { border-left: 6px solid #f97316; }
+        .section-튜터팁 .accordion-header { border-left: 6px solid #ec4899; }
+        .section-학부모팁 .accordion-header { border-left: 6px solid #ec4899; }
+
+        /* 상단 헤더 개선 - 고정 설정 */
+        .top-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 0.75rem 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 50; /* 높은 z-index로 항상 상단 고정 */
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .curriculum-label {
+            font-size: 0.875rem; /* 크기 줄임 */
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .curriculum-select {
+            flex: 1;
+            max-width: 800px;
+            padding: 0.5rem 0.75rem; /* 패딩 줄임 */
+            border: 1px solid #d1d5db;
+            border-radius: 6px; /* 둥글기 줄임 */
+            font-size: 0.875rem; /* 크기 줄임 */
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .curriculum-select:focus {
+            ring: 2px;
+            ring-color: #3b82f6;
+            border-color: #3b82f6;
+            outline: none;
+        }
+
+        /* AI Agent 뷰 최적화 */
+        .ai-agent-container {
+            height: calc(100vh - 60px); /* 상단 헤더 높이 제외한 전체 화면 */
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem; /* 패딩 줄임 */
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-window-optimized {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem; /* 패딩 줄임 */
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem; /* 간격 줄임 */
+            min-height: 0; /* flexbox 최적화 */
+        }
+
+        .feature-buttons-container {
+            padding: 0.75rem 1rem; /* 패딩 줄임 */
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .chat-input-container {
+            padding: 0.75rem 1rem; /* 패딩 줄임 */
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                max-width: 100%;
+            }
+            .user-type-selector {
+                position: relative;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%); /* 모바일에서도 가운데 정렬 유지 */
+                margin-bottom: 0.75rem;
+                justify-content: center; /* flex 아이템들도 가운데 정렬 */
+            }
+            .sidebar-logo {
+                margin-top: 0.5rem; /* 모바일에서는 간격 줄임 */
+            }
+            .ai-agent-container {
+                height: calc(100vh - 80px);
+            }
+        }
+
+        /* 대표 예제 전용 스타일링 - 클래스 기반 */
+        .section-대표예제 .accordion-content {
+            padding: 1rem;
+        }
+
+        /* 문제 키워드 스타일링 */
+        .section-대표예제 .problem-keyword {
+            display: inline-block;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+        }
+
+        /* 문제가 포함된 리스트 아이템 스타일링 */
+        .section-대표예제 .problem-item {
+            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+            border: 2px solid #f97316;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.1);
+            position: relative;
+        }
+
+        .section-대표예제 .problem-item::before {
+            content: "📝 문제";
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: #f97316;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* 풀이 키워드 스타일링 */
+        .section-대표예제 .solution-keyword {
+            display: inline-block;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
+        }
+
+        /* 풀이가 포함된 영역 스타일링 */
+        .section-대표예제 .solution-item {
+            background: linear-gradient(135deg, #f0f9ff 0%, #bae6fd 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1);
+            position: relative;
+        }
+
+        .section-대표예제 .solution-item::before {
+            content: "💡 풀이";
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: #0ea5e9;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* 답 키워드 스타일링 */
+        .section-대표예제 .answer-item {
+            background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
+            border: 2px solid #22c55e;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.1);
+            font-weight: 600;
+            font-size: 1.05rem;
+            position: relative;
+        }
+
+        .section-대표예제 .answer-item::before {
+            content: "✓ 답";
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: #22c55e;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* 번호 매기기 스타일 */
+        .section-대표예제 > ol > li {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .section-대표예제 > ol {
+            counter-reset: problem-counter;
+            padding-left: 0;
+        }
+
+        .section-대표예제 > ol > li {
+            counter-increment: problem-counter;
+        }
+
+        .section-대표예제 > ol > li::before {
+            content: "예제 " counter(problem-counter);
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* 기본 리스트 스타일 정리 */
+        .section-대표예제 ul, .section-대표예제 ol {
+            padding-left: 1rem;
+        }
+
+        .section-대표예제 li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="main-layout">
+        <!-- 좌측 사이드바 -->
+        <div class="sidebar">
+            <!-- 사용자 타입 선택 버튼 -->
+            <div class="user-type-selector">
+                <button class="user-type-btn active" data-type="teacher" onclick="switchUserType('teacher')">👩‍🏫 선생님</button>
+                <button class="user-type-btn" data-type="student" onclick="switchUserType('student')">🎓 학생</button>
+                <button class="user-type-btn" data-type="parent" onclick="switchUserType('parent')">👨‍👩‍👧‍👦 학부모</button>
+            </div>
+            
+            <div class="sidebar-logo">
+                <h1>🧭 Math Navigator</h1>
+                <p class="text-sm text-slate-300 mt-1">2022 개정 교육과정 기반(중학교)</p>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-item active" id="menu-ai" onclick="switchToView('ai')">
+                    <span>🤖</span>
+                    <span>AI 에이전트</span>
+                </div>
+                
+                <div class="menu-item" id="menu-explorer" onclick="switchToView('explorer')">
+                    <span>📚</span>
+                    <span>교육과정 탐색기</span>
+                </div>
+                
+                <div class="menu-submenu" id="curriculum-submenu" style="display: none;">
+                    <div class="submenu-item" onclick="scrollToSection('학습목표')">🎯 학습 목표</div>
+                    <div class="submenu-item" onclick="scrollToSection('개념설명')">📖 개념 설명</div>
+                    <div class="submenu-item" onclick="scrollToSection('대표예제')">💡 대표 예제</div>
+                    <div class="submenu-item" onclick="scrollToSection('연습문제')">✏️ 연습 문제</div>
+                    <div class="submenu-item" onclick="scrollToSection('정답및해설')">✅ 정답 및 해설</div>
+                    <div class="submenu-item" onclick="scrollToSection('마스터리드릴')">⚡ 마스터리 드릴</div>
+                    <div class="submenu-item" onclick="scrollToSection('진단체크')">🔍 진단 체크</div>
+                    <div class="submenu-item" onclick="scrollToSection('확장활동')">🚀 확장 활동</div>
+                    <div class="submenu-item" id="tutor-tip-menu" onclick="scrollToSection('튜터팁')">💬 튜터 팁</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 컨텐츠 영역 -->
+        <div class="main-content">
+            <!-- 상단 성취기준 선택 -->
+            <div class="top-header">
+                <label for="curriculum-select" class="curriculum-label">현재 학습 주제:</label>
+                <select id="curriculum-select" class="curriculum-select">
+                    <option value="">-- 학습할 주제를 선택해주세요 --</option>
+                </select>
+            </div>
+
+            <!-- AI Agent 뷰 -->
+            <div id="ai-agent-view" class="ai-agent-container">
+                <div class="chat-container">
+                    <div id="chat-window" class="chat-window-optimized">
+                        <div class="flex justify-start">
+                            <div class="chat-bubble chat-bubble-ai p-3 rounded-lg relative"> <!-- 패딩 줄임 -->
+                                <p class="font-semibold text-blue-600 text-sm">Math Navigator AI</p> <!-- 크기 줄임 -->
+                                <p class="mt-1 text-sm">안녕하세요! 먼저 상단 메뉴에서 학습할 주제(성취기준 코드)를 선택해주세요. 그 다음, 아래 기능 버튼을 누르거나 궁금한 점을 직접 질문해주시면 선택된 주제에 맞춰 도와드릴게요.</p> <!-- 크기와 마진 줄임 -->
+                            </div>
+                        </div>
+                    </div>
+                    <div id="feature-buttons" class="feature-buttons-container flex flex-wrap gap-2">
+                        <!-- 버튼들은 JavaScript에서 동적으로 생성 -->
+                    </div>
+                    <div class="chat-input-container">
+                        <div class="flex items-center">
+                            <input type="text" id="chat-input" class="w-full p-2.5 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" placeholder="주제를 선택하고 질문을 입력하세요..." autocomplete="off"> <!-- 패딩과 크기 줄임 -->
+                            <button id="send-btn" class="bg-blue-600 text-white p-2.5 rounded-r-lg hover:bg-blue-700 transition flex-shrink-0"> <!-- 패딩 줄임 -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> <!-- 아이콘 크기 줄임 -->
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curriculum Explorer 뷰 -->
+            <div id="curriculum-explorer-view" class="hidden p-3"> <!-- 패딩 더 줄임 -->
+                <main id="content-display" class="min-h-[300px]">
+                    <div id="welcome-message" class="text-center text-gray-500 bg-white p-6 rounded-xl shadow-lg"> <!-- 패딩 줄임 -->
+                        <p class="text-4xl mb-3">🚀</p> <!-- 크기와 마진 더 줄임 -->
+                        <p class="text-base font-medium">상단 드롭다운 메뉴에서 성취기준 코드를 선택하면<br>관련 학습 내용이 여기에 표시됩니다.</p> <!-- 크기 줄임 -->
+                    </div>
+                    <div id="content-area" class="content-area"></div>
+                </main>
+            </div>
+
+            <!-- Footer -->
+            <footer class="text-center py-3 text-gray-400 text-xs"> <!-- 패딩과 크기 더 줄임 -->
+                <p>&copy; 2024 Math Navigator AI Project. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const selectElement = document.getElementById('curriculum-select');
+        const contentDisplay = document.getElementById('content-display');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const contentArea = document.getElementById('content-area');
+        const chatWindow = document.getElementById('chat-window');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const aiAgentView = document.getElementById('ai-agent-view');
+        const curriculumExplorerView = document.getElementById('curriculum-explorer-view');
+        const curriculumSubmenu = document.getElementById('curriculum-submenu');
+        const featureButtons = document.getElementById('feature-buttons');
+        const tutorTipMenu = document.getElementById('tutor-tip-menu');
+
+        let curriculumData = {}; // Store the loaded JSON data
+        let currentView = 'ai';
+        let currentUserType = 'teacher'; // 기본값: 선생님
+
+        // 사용자 타입별 기능 버튼 정의
+        const userTypeFeatures = {
+            teacher: [
+                { id: 'quiz', text: '📝 퀴즈 만들기', color: 'blue' },
+                { id: 'lesson_plan', text: '📋 수업계획안 짜기', color: 'green' },
+                { id: 'assessment', text: '✅ 수행평가 만들기', color: 'purple' }
+            ],
+            student: [
+                { id: 'quiz_solve', text: '🎯 퀴즈 풀어보기', color: 'blue' },
+                { id: 'flashcard', text: '🃏 핵심 암기 카드', color: 'green' },
+                { id: 'study_tips', text: '💡 실전 대비 팁', color: 'purple' }
+            ],
+            parent: [
+                { id: 'quiz_solve', text: '🎯 퀴즈 풀어보기', color: 'blue' },
+                { id: 'flashcard', text: '🃏 핵심 암기 카드', color: 'green' },
+                { id: 'parent_tips', text: '👨‍👩‍👧‍👦 우리 아이 학습 팁', color: 'purple' }
+            ]
+        };
+
+        // 사용자 타입 전환 함수
+        function switchUserType(userType) {
+            currentUserType = userType;
+            
+            // 버튼 활성화 상태 업데이트
+            document.querySelectorAll('.user-type-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-type="${userType}"]`).classList.add('active');
+            
+            // 기능 버튼 업데이트
+            updateFeatureButtons();
+            
+            // 튜터 팁 메뉴 업데이트
+            updateTutorTipMenu();
+            
+            // 현재 표시된 콘텐츠 새로고침 (탐색기 뷰인 경우)
+            if (currentView === 'explorer' && selectElement.value) {
+                displayContent(selectElement.value);
+            }
+        }
+
+        // 기능 버튼 업데이트
+        function updateFeatureButtons() {
+            const features = userTypeFeatures[currentUserType];
+            featureButtons.innerHTML = '';
+            
+            features.forEach(feature => {
+                const button = document.createElement('button');
+                button.onclick = () => handleFeatureClick(feature.id);
+                button.className = `bg-${feature.color}-100 text-${feature.color}-800 font-medium px-3 py-1.5 rounded-full hover:bg-${feature.color}-200 transition transform hover:scale-105 text-xs`; // 크기 더 줄임
+                button.textContent = feature.text;
+                featureButtons.appendChild(button);
+            });
+        }
+
+        // 튜터 팁 메뉴 업데이트
+        function updateTutorTipMenu() {
+            if (currentUserType === 'student') {
+                // 학생 모드: 튜터 팁 메뉴 완전히 숨김
+                tutorTipMenu.style.display = 'none';
+            } else if (currentUserType === 'parent') {
+                // 학부모 모드: 학부모 팁으로 변경
+                tutorTipMenu.style.display = 'block';
+                tutorTipMenu.innerHTML = '👨‍👩‍👧‍👦 학부모 팁';
+                tutorTipMenu.onclick = () => scrollToSection('학부모팁');
+            } else {
+                // 선생님 모드: 튜터 팁 표시
+                tutorTipMenu.style.display = 'block';
+                tutorTipMenu.innerHTML = '💬 튜터 팁';
+                tutorTipMenu.onclick = () => scrollToSection('튜터팁');
+            }
+        }
+
+        // 1. Fetch and Load JSON Data from our Backend
+        async function loadData() {
+            try {
+                const response = await fetch('/api/curriculum-data');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                curriculumData = await response.json();
+                populateSelectOptions();
+                updateFeatureButtons(); // 초기 버튼 생성
+            } catch (error) {
+                console.error("데이터 로딩 오류:", error);
+                alert("교육과정 데이터를 불러오는 데 실패했습니다. 서버가 실행 중인지 확인해주세요.");
+            }
+        }
+
+        function populateSelectOptions() {
+            const codes = Object.keys(curriculumData);
+            codes.forEach(code => {
+                const option = document.createElement('option');
+                option.value = code;
+                const title = curriculumData[code]["학습 목표"] || "제목 없음";
+                // 텍스트 길이 제한을 늘림
+                const truncatedTitle = title.length > 80 ? title.substring(0, 80) + "..." : title;
+                option.textContent = `${code} - ${truncatedTitle}`;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // 뷰 전환 함수
+        function switchToView(view) {
+            currentView = view;
+            
+            // 메뉴 활성화 상태 업데이트
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            
+            if (view === 'ai') {
+                aiAgentView.classList.remove('hidden');
+                curriculumExplorerView.classList.add('hidden');
+                curriculumSubmenu.style.display = 'none';
+                document.getElementById('menu-ai').classList.add('active');
+            } else if (view === 'explorer') {
+                curriculumExplorerView.classList.remove('hidden');
+                aiAgentView.classList.add('hidden');
+                curriculumSubmenu.style.display = 'block';
+                document.getElementById('menu-explorer').classList.add('active');
+                displayContent(selectElement.value);
+            }
+        }
+
+        // 교육과정 선택 함수
+        function selectCurriculum(code) {
+            selectElement.value = code;
+            if (currentView === 'explorer') {
+                displayContent(code);
+            }
+            
+            // 서브메뉴 활성화 상태 업데이트
+            document.querySelectorAll('.submenu-item').forEach(item => item.classList.remove('active'));
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+
+        // 섹션별 바로가기 함수
+        function scrollToSection(sectionName) {
+            if (currentView !== 'explorer') {
+                switchToView('explorer');
+            }
+            
+            // 성취기준이 선택되지 않은 경우 안내
+            if (!selectElement.value) {
+                alert('먼저 상단에서 성취기준 코드를 선택해주세요!');
+                return;
+            }
+            
+            setTimeout(() => {
+                const sectionId = `section-${sectionName}`;
+                const sectionElement = document.getElementById(sectionId);
+                
+                if (sectionElement) {
+                    // 해당 섹션이 닫혀있다면 열기
+                    if (!sectionElement.classList.contains('active')) {
+                        toggleAccordion(sectionId);
+                    }
+                    
+                    // 정확한 위치 계산 (헤더를 고려)
+                    const accordionItem = sectionElement.closest('.accordion-item');
+                    const accordionHeader = accordionItem.querySelector('.accordion-header');
+                    const headerOffset = 100; // 상단 고정 헤더 높이 + 여백 (줄임)
+                    
+                    // 정확한 스크롤 위치 계산
+                    const elementPosition = accordionHeader.offsetTop;
+                    const offsetPosition = elementPosition - headerOffset;
+                    
+                    // 부드럽게 스크롤
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 서브메뉴 활성화 상태 업데이트
+                    document.querySelectorAll('.submenu-item').forEach(item => item.classList.remove('active'));
+                    if (event && event.target) {
+                        event.target.classList.add('active');
+                    }
+                    
+                    // 잠깐 하이라이트 효과
+                    accordionItem.style.background = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+                    accordionItem.style.transform = 'scale(1.02)';
+                    accordionItem.style.transition = 'all 0.3s ease';
+                    
+                    setTimeout(() => {
+                        accordionItem.style.background = '';
+                        accordionItem.style.transform = '';
+                        accordionItem.style.transition = '';
+                    }, 1000);
+                }
+            }, 200);
+        }
+
+        // 섹션별 아이콘 매핑
+        const sectionIcons = {
+            "학습 목표": "🎯",
+            "개념 설명": "📖", 
+            "대표 예제": "💡",
+            "연습 문제": "✏️",
+            "정답 및 해설": "✅",
+            "마스터리 드릴": "⚡",
+            "진단 체크": "🔍",
+            "확장 활동": "🚀",
+            "튜터 팁": "💬",
+            "학부모 팁": "👨‍👩‍👧‍👦"
+        };
+
+        function displayContent(code) {
+            if (!code) {
+                welcomeMessage.classList.remove('hidden');
+                contentArea.innerHTML = '';
+                return;
+            }
+            welcomeMessage.classList.add('hidden');
+            contentArea.innerHTML = ''; 
+            const data = curriculumData[code];
+            if (!data) {
+                contentArea.innerHTML = '<p class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">해당 코드에 대한 데이터를 찾을 수 없습니다.</p>';
+                return;
+            }
+
+            // 사용자 타입에 따른 섹션 순서 정의
+            let sectionOrder;
+            if (currentUserType === 'student') {
+                sectionOrder = ["학습 목표", "개념 설명", "대표 예제", "연습 문제", "정답 및 해설", "마스터리 드릴", "진단 체크", "확장 활동"];
+            } else if (currentUserType === 'parent') {
+                sectionOrder = ["학습 목표", "개념 설명", "대표 예제", "연습 문제", "정답 및 해설", "마스터리 드릴", "진단 체크", "확장 활동", "학부모 팁"];
+            } else { // teacher
+                sectionOrder = ["학습 목표", "개념 설명", "대표 예제", "연습 문제", "정답 및 해설", "마스터리 드릴", "진단 체크", "확장 활동", "튜터 팁"];
+            }
+            
+            const defaultOpenSections = ["학습 목표", "개념 설명"];
+            
+            let htmlContent = '';
+            sectionOrder.forEach(sectionName => {
+                let dataKey = sectionName;
+                // 학부모 팁의 경우 튜터 팁 데이터를 사용
+                if (sectionName === "학부모 팁") {
+                    dataKey = "튜터 팁";
+                }
+                
+                if (data[dataKey]) {
+                    const markdownText = data[dataKey];
+                    const sectionHtml = marked.parse(markdownText);
+                    const sectionId = `section-${sectionName.replace(/\s+/g, '')}`;
+                    const icon = sectionIcons[sectionName] || "📄";
+                    const isOpen = defaultOpenSections.includes(sectionName);
+                    const sectionClass = `section-${sectionName.replace(/\s+/g, '')}`;
+                    
+                    htmlContent += `
+                        <div class="accordion-item ${sectionClass}">
+                            <div class="accordion-header" onclick="toggleAccordion('${sectionId}')">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xl">${icon}</span> <!-- 아이콘 크기 줄임 -->
+                                    <span class="text-base">${sectionName}</span> <!-- 텍스트 크기 줄임 -->
+                                </div>
+                                <span class="accordion-icon ${isOpen ? 'rotated' : ''}">▼</span>
+                            </div>
+                            <div id="${sectionId}" class="accordion-content ${isOpen ? 'active' : ''}">
+                                ${sectionHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            contentArea.innerHTML = htmlContent;
+            renderMath(contentArea);
+            
+            // 대표 예제 섹션 스타일링 적용 (더 안전하게)
+            setTimeout(() => {
+                const exampleSection = contentArea.querySelector('#section-대표예제');
+                if (exampleSection && !exampleSection.dataset.exampleStyled) {
+                    styleExampleSection(exampleSection);
+                }
+            }, 100);
+        }
+
+        // 아코디언 토글 함수
+        function toggleAccordion(sectionId) {
+            const content = document.getElementById(sectionId);
+            const header = content.previousElementSibling;
+            const icon = header.querySelector('.accordion-icon');
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                icon.classList.remove('rotated');
+            } else {
+                content.classList.add('active');
+                icon.classList.add('rotated');
+                renderMath(content);
+                
+                // 대표 예제 섹션인 경우 스타일링 적용
+                if (sectionId === 'section-대표예제') {
+                    styleExampleSection(content);
+                }
+            }
+        }
+
+        // KaTeX 수식 렌더링 - 가장 확실한 방법
+        function renderMath(element) {
+            if (!element) return;
+            
+            // 이미 처리된 요소는 건드리지 않음
+            if (element.dataset.mathDone === 'true') {
+                return;
+            }
+            
+            console.log('수식 렌더링 시작:', element);
+            
+            // KaTeX 로딩 확인
+            if (!window.katex) {
+                console.error('KaTeX가 로드되지 않았습니다!');
+                return;
+            }
+            
+            try {
+                let html = element.innerHTML;
+                let originalHtml = html;
+                
+                // 블록 수식 처리 ($$...$$)
+                html = html.replace(/\$\$([^$]+?)\$\$/g, function(match, tex) {
+                    console.log('블록 수식 발견:', tex);
+                    try {
+                        const rendered = katex.renderToString(tex.trim(), { 
+                            displayMode: true, 
+                            throwOnError: false 
+                        });
+                        console.log('블록 수식 렌더링 성공');
+                        return rendered;
+                    } catch (e) {
+                        console.error('블록 수식 렌더링 실패:', e);
+                        return match;
+                    }
+                });
+                
+                // 인라인 수식 처리 ($...$)
+                html = html.replace(/\$([^$\n]+?)\$/g, function(match, tex) {
+                    console.log('인라인 수식 발견:', tex);
+                    try {
+                        const rendered = katex.renderToString(tex.trim(), { 
+                            displayMode: false, 
+                            throwOnError: false 
+                        });
+                        console.log('인라인 수식 렌더링 성공');
+                        return rendered;
+                    } catch (e) {
+                        console.error('인라인 수식 렌더링 실패:', e);
+                        return match;
+                    }
+                });
+                
+                // 변경사항이 있으면 적용
+                if (html !== originalHtml) {
+                    element.innerHTML = html;
+                    console.log('수식 렌더링 완료!');
+                } else {
+                    console.log('렌더링할 수식이 없음');
+                }
+                
+                // 처리 완료 마킹
+                element.dataset.mathDone = 'true';
+                
+            } catch (error) {
+                console.error('전체 수식 렌더링 오류:', error);
+                element.dataset.mathDone = 'true';
+            }
+        }
+
+        // 대표 예제 스타일링 초기화 함수
+        function resetExampleStyling() {
+            const exampleSections = document.querySelectorAll('[data-example-styled="true"]');
+            exampleSections.forEach(section => {
+                section.dataset.exampleStyled = 'false';
+                // 원본 콘텐츠로 복원하기 위해 새로고침이 필요할 수 있음
+            });
+            console.log('대표 예제 스타일링 초기화됨');
+        }
+
+        // 대표 예제 스타일링 함수 - 정확한 타겟팅
+        function styleExampleSection(element) {
+            if (!element || element.dataset.exampleStyled === 'true') {
+                return;
+            }
+            
+            try {
+                // 모든 li 요소 찾기
+                const allLis = element.querySelectorAll('li');
+                
+                allLis.forEach(li => {
+                    const text = li.textContent.trim();
+                    const strongTags = li.querySelectorAll('strong');
+                    
+                    // 이미 스타일이 적용된 요소는 건너뛰기
+                    if (li.classList.contains('problem-item') || 
+                        li.classList.contains('solution-item') || 
+                        li.classList.contains('answer-item')) {
+                        return;
+                    }
+                    
+                    // 첫 번째 strong 태그의 내용으로만 판단
+                    if (strongTags.length > 0) {
+                        const firstStrongText = strongTags[0].textContent.trim();
+                        
+                        // 문제로 시작하는 li만 문제 박스로
+                        if (firstStrongText === '문제') {
+                            strongTags[0].classList.add('problem-keyword');
+                            li.classList.add('problem-item');
+                        }
+                        // 풀이로 시작하는 li만 풀이 박스로
+                        else if (firstStrongText === '풀이' || firstStrongText.startsWith('풀이 ')) {
+                            strongTags[0].classList.add('solution-keyword');
+                            li.classList.add('solution-item');
+                        }
+                    }
+                    
+                    // "답:" 으로 시작하는 독립적인 li만 답 박스로
+                    if (text.startsWith('답:') && text.length < 100) {
+                        li.classList.add('answer-item');
+                    }
+                });
+                
+                element.dataset.exampleStyled = 'true';
+                console.log('대표 예제 정확한 스타일링 완료');
+                
+            } catch (error) {
+                console.error('대표 예제 스타일링 오류:', error);
+                element.dataset.exampleStyled = 'true';
+            }
+        }
+
+        // 채팅 관련 함수들
+        function addChatMessage(message, sender, rawMessage = null) {
+            const messageWrapper = document.createElement('div');
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'chat-bubble p-3 rounded-lg relative'; // 패딩 더 줄임
+
+            if (sender === 'user') {
+                messageWrapper.className = 'flex justify-end';
+                bubbleDiv.classList.add('chat-bubble-user');
+                bubbleDiv.textContent = message;
+            } else { // AI
+                messageWrapper.className = 'flex items-start justify-start';
+                bubbleDiv.classList.add('chat-bubble-ai');
+                bubbleDiv.innerHTML = `<p class="font-semibold mb-1.5 text-blue-600 text-sm">Math Navigator AI</p><div class="ai-response text-sm">${message}</div>`; // 마진과 크기 줄임
+
+                if(rawMessage) {
+                    bubbleDiv.querySelector('.ai-response').dataset.rawText = rawMessage;
+                }
+
+                const copyButton = document.createElement('button');
+                copyButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`; // 아이콘 크기 줄임
+                copyButton.className = "absolute top-1.5 right-1.5 p-1.5 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition text-xs"; // 위치와 크기 조정
+                copyButton.title = "답변 복사";
+                copyButton.onclick = copyToClipboard;
+                
+                // 구글 독스 내보내기 버튼
+                const exportButton = document.createElement('button');
+                exportButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10,9 9,9 8,9"></polyline></svg>`; // 아이콘 크기 줄임
+                exportButton.className = "absolute top-1.5 right-10 p-1.5 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition text-xs"; // 위치와 크기 조정
+                exportButton.title = "구글 독스로 내보내기";
+                exportButton.onclick = exportToGoogleDocs;
+                
+                bubbleDiv.appendChild(copyButton);
+                bubbleDiv.appendChild(exportButton);
+            }
+
+            messageWrapper.appendChild(bubbleDiv);
+            chatWindow.appendChild(messageWrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return bubbleDiv.querySelector('.ai-response');
+        }
+
+        function copyToClipboard(event) {
+            const button = event.currentTarget;
+            const aiResponseDiv = button.closest('.chat-bubble-ai').querySelector('.ai-response');
+            const textToCopy = aiResponseDiv.dataset.rawText;
+
+            if (textToCopy) {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    button.innerHTML = '✅';
+                    setTimeout(() => {
+                         button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+                    }, 2000);
+                } catch (err) {
+                    console.error('클립보드 복사 실패:', err);
+                    alert('복사에 실패했습니다.');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // 구글 독스로 내보내기 함수
+        function exportToGoogleDocs(event) {
+            const button = event.currentTarget;
+            const aiResponseDiv = button.closest('.chat-bubble-ai').querySelector('.ai-response');
+            const textToExport = aiResponseDiv.dataset.rawText;
+
+            if (textToExport) {
+                try {
+                    // 마크다운을 일반 텍스트로 변환
+                    let cleanText = textToExport
+                        .replace(/\*\*(.*?)\*\*/g, '$1')
+                        .replace(/\*(.*?)\*/g, '$1')
+                        .replace(/`(.*?)`/g, '$1')
+                        .replace(/#{1,6}\s?/g, '')
+                        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+                        .replace(/\$\$(.*?)\$\$/g, '$1')
+                        .replace(/\$(.*?)\$/g, '$1')
+                        .replace(/>\s*/g, '')
+                        .replace(/^\s*[-*+]\s+/gm, '• ')
+                        .replace(/^\s*\d+\.\s+/gm, '')
+                        .trim();
+
+                    // 현재 날짜 추가
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('ko-KR');
+                    const documentTitle = 'Math Navigator AI 답변 - ' + dateStr;
+                    const documentContent = documentTitle + '\n생성일시: ' + dateStr + '\n\n' + cleanText;
+
+                    // 클립보드에 복사
+                    const textArea = document.createElement("textarea");
+                    textArea.value = documentContent;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    // 구글 독스 열기
+                    window.open('https://docs.google.com/document/', '_blank');
+                    
+                    // 사용자에게 안내
+                    alert('내용이 클립보드에 복사되었습니다!\n새로 열린 구글 독스에 붙여넣기(Ctrl+V)하세요.');
+
+                    // 버튼 상태 변경
+                    button.innerHTML = '📄';
+                    button.style.background = '#34a853';
+                    button.style.color = 'white';
+                    
+                    setTimeout(function() {
+                        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10,9 9,9 8,9"></polyline></svg>';
+                        button.style.background = '#dbeafe';
+                        button.style.color = '#2563eb';
+                    }, 3000);
+
+                } catch (err) {
+                    console.error('구글 독스 내보내기 실패:', err);
+                    alert('구글 독스 내보내기에 실패했습니다.');
+                }
+            }
+        }
+
+        function handleFeatureClick(feature) {
+            const selectedCode = selectElement.value;
+            if (!selectedCode) {
+                alert('먼저 상단 메뉴에서 학습할 주제(성취기준 코드)를 선택해주세요!');
+                return;
+            }
+
+            let prompt = '';
+            switch(feature) {
+                // 선생님용
+                case 'quiz':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 정답 및 해설과 함께 만들어줘.`;
+                    break;
+                case 'lesson_plan':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 주제로, '도입-전개-정리' 형식의 한 차시 수업계획안을 구체적으로 짜줘.`;
+                    break;
+                case 'assessment':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]와 관련된 과정중심 수행평가 아이디어를 채점 기준표(루브릭)를 포함하여 제안해줘.`;
+                    break;
+                // 학생용
+                case 'quiz_solve':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 만들어주고, 각 문제에 대한 해설도 함께 제공해줘. 학생이 공부하기 좋도록 단계별로 설명해줘.`;
+                    break;
+                case 'flashcard':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]의 핵심 개념들을 암기카드 형식으로 정리해줘. 앞면에는 질문이나 개념, 뒷면에는 답이나 설명이 오도록 만들어줘.`;
+                    break;
+                case 'study_tips':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 효과적으로 공부하고 시험에서 좋은 점수를 받을 수 있는 실전 대비 팁과 학습 전략을 알려줘.`;
+                    break;
+                // 학부모용
+                case 'parent_tips':
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 공부하는 우리 아이를 어떻게 도와줄 수 있는지, 학부모로서 할 수 있는 구체적인 학습 지원 방법과 팁을 알려줘.`;
+                    break;
+            }
+            addChatMessage(prompt, 'user');
+            callAIAgent(prompt);
+        }
+
+        async function handleSendMessage() {
+            const userInput = chatInput.value.trim();
+            if (!userInput) return;
+            addChatMessage(userInput, 'user');
+            chatInput.value = '';
+            await callAIAgent(userInput);
+        }
+
+        // AI Agent API Call (to our own backend)
+        async function callAIAgent(userInput) {
+            const aiResponseContainer = addChatMessage('<span class="blinking-cursor"></span>', 'ai', '');
+            const selectedCode = selectElement.value;
+
+            try {
+                const response = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: userInput,
+                        code: selectedCode
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `서버 오류: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const aiText = result.answer;
+
+                aiResponseContainer.dataset.rawText = aiText;
+                aiResponseContainer.innerHTML = marked.parse(aiText);
+                renderMath(aiResponseContainer);
+
+            } catch (error) {
+                console.error("AI 에이전트 호출 오류:", error);
+                aiResponseContainer.innerHTML = `<p class="text-red-500">AI와 통신 중 오류가 발생했습니다.<br>${error.message}</p>`;
+            }
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSendMessage);
+        chatInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') { handleSendMessage(); }
+        });
+        selectElement.addEventListener('change', (event) => {
+            if (currentView === 'explorer') {
+                displayContent(event.target.value);
+            }
+        });
+
+        // Initial Load
+        window.onload = function() {
+            // KaTeX 로딩 상태 확인
+            console.log('KaTeX 상태 확인:');
+            console.log('window.katex:', !!window.katex);
+            console.log('window.renderMathInElement:', !!window.renderMathInElement);
+            
+            // 데이터 로드
+            loadData();
+        };
+    </script>
+
+</body>
+</html>
