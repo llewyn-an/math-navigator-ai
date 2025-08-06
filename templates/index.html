@@ -1588,24 +1588,31 @@
                 return;
             }
 
-            let prompt = '';
+            let userMessage = '';  // 사용자에게 보여줄 간단한 메시지
+            let aiPrompt = '';     // AI에게 보낼 상세한 프롬프트
+            
             switch(feature) {
                 // 선생님용
                 case 'quiz':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 정답 및 해설과 함께 만들어줘.`;
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 정답 및 해설과 함께 만들어줘.`;
+                    aiPrompt = userMessage;
                     break;
                 case 'lesson_plan':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 주제로, '도입-전개-정리' 형식의 한 차시 수업계획안을 구체적으로 짜줘.`;
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]를 주제로, '도입-전개-정리' 형식의 한 차시 수업계획안을 구체적으로 짜줘.`;
+                    aiPrompt = userMessage;
                     break;
                 case 'assessment':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]와 관련된 과정중심 수행평가 아이디어를 채점 기준표(루브릭)를 포함하여 제안해줘.`;
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]와 관련된 과정중심 수행평가 아이디어를 채점 기준표(루브릭)를 포함하여 제안해줘.`;
+                    aiPrompt = userMessage;
                     break;
                 // 학생용
                 case 'quiz_solve':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 만들어주고, 각 문제에 대한 해설도 함께 제공해줘. 학생이 공부하기 좋도록 단계별로 설명해줘.`;
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 만들어주고, 각 문제에 대한 해설도 함께 제공해줘. 학생이 공부하기 좋도록 단계별로 설명해줘.`;
+                    aiPrompt = userMessage;
                     break;
                 case 'flashcard':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]의 핵심 개념들을 암기카드 형식으로 정리해줘. 
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]의 핵심 개념들을 암기카드 형식으로 정리해줘.`;
+                    aiPrompt = `현재 선택된 성취기준 코드 [${selectedCode}]의 핵심 개념들을 암기카드 형식으로 정리해줘. 
                     
 **반드시 다음 형식을 사용해서 답변해줘:**
 
@@ -1626,15 +1633,20 @@
 이런 식으로 최소 5개 이상의 카드를 만들어주고, 각 카드는 표 형태로 앞면과 뒷면을 명확히 구분해줘.`;
                     break;
                 case 'study_tips':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 효과적으로 공부하고 시험에서 좋은 점수를 받을 수 있는 실전 대비 팁과 학습 전략을 알려줘.`;
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]를 효과적으로 공부하고 시험에서 좋은 점수를 받을 수 있는 실전 대비 팁과 학습 전략을 알려줘.`;
+                    aiPrompt = userMessage;
                     break;
                 // 학부모용
                 case 'parent_tips':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 공부하는 우리 아이를 어떻게 도와줄 수 있는지, 학부모로서 할 수 있는 구체적인 학습 지원 방법과 팁을 알려줘.`;
+                    userMessage = `현재 선택된 성취기준 코드 [${selectedCode}]를 공부하는 우리 아이를 어떻게 도와줄 수 있는지, 학부모로서 할 수 있는 구체적인 학습 지원 방법과 팁을 알려줘.`;
+                    aiPrompt = userMessage;
                     break;
             }
-            addChatMessage(prompt, 'user');
-            callAIAgent(prompt);
+            
+            // 사용자에게는 간단한 메시지 표시
+            addChatMessage(userMessage, 'user');
+            // AI에게는 상세한 프롬프트 전송
+            callAIAgent(aiPrompt);
         }
 
         async function handleSendMessage() {
