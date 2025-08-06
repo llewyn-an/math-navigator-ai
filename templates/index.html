@@ -809,6 +809,107 @@
         .section-대표예제 li {
             margin-bottom: 0.75rem;
         }
+
+        /* 암기카드 전용 스타일링 */
+        .ai-response h2:has(+ *):has([class*="카드"]),
+        .ai-response h2:contains("암기 카드"),
+        .ai-response h2:contains("🃏") {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        /* 암기카드 개별 카드 제목 */
+        .ai-response h3:contains("카드") {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin: 1rem 0 0.5rem 0;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 암기카드 테이블 특별 스타일링 */
+        .ai-response table:has(th:contains("앞면")):has(th:contains("뒷면")) {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 3px solid #e5e7eb;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 1rem 0 2rem 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .ai-response table:has(th:contains("앞면")):has(th:contains("뒷면")):hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 암기카드 테이블 헤더 */
+        .ai-response table:has(th:contains("앞면")) th:first-child {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            position: relative;
+        }
+
+        .ai-response table:has(th:contains("뒷면")) th:last-child {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            position: relative;
+        }
+
+        /* 암기카드 테이블 아이콘 추가 */
+        .ai-response table:has(th:contains("앞면")) th:first-child::before {
+            content: "❓ ";
+            font-size: 1.2em;
+            margin-right: 0.5rem;
+        }
+
+        .ai-response table:has(th:contains("뒷면")) th:last-child::before {
+            content: "💡 ";
+            font-size: 1.2em;
+            margin-right: 0.5rem;
+        }
+
+        /* 암기카드 테이블 내용 */
+        .ai-response table:has(th:contains("앞면")) td {
+            padding: 1.5rem;
+            border-bottom: none;
+            font-size: 1rem;
+            line-height: 1.5;
+            vertical-align: top;
+        }
+
+        .ai-response table:has(th:contains("앞면")) td:first-child {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-right: 2px solid #d1d5db;
+            font-weight: 600;
+            color: #065f46;
+        }
+
+        .ai-response table:has(th:contains("뒷면")) td:last-child {
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            color: #581c87;
+        }
+
+        /* 암기카드 강조 텍스트 */
+        .ai-response table:has(th:contains("앞면")) strong {
+            color: inherit;
+            background: none;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -1504,7 +1605,25 @@
                     prompt = `현재 선택된 성취기준 코드 [${selectedCode}]에 대한 객관식 연습문제 3개를 만들어주고, 각 문제에 대한 해설도 함께 제공해줘. 학생이 공부하기 좋도록 단계별로 설명해줘.`;
                     break;
                 case 'flashcard':
-                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]의 핵심 개념들을 암기카드 형식으로 정리해줘. 앞면에는 질문이나 개념, 뒷면에는 답이나 설명이 오도록 만들어줘.`;
+                    prompt = `현재 선택된 성취기준 코드 [${selectedCode}]의 핵심 개념들을 암기카드 형식으로 정리해줘. 
+                    
+**반드시 다음 형식을 사용해서 답변해줘:**
+
+## 🃏 [성취기준 코드] 핵심 암기 카드
+
+### 카드 1: [핵심 개념명]
+
+| 앞면 | 뒷면 |
+|------|------|
+| **질문:** [개념 질문] | **답:** [개념 설명] |
+
+### 카드 2: [핵심 개념명]
+
+| 앞면 | 뒷면 |
+|------|------|
+| **질문:** [개념 질문] | **답:** [개념 설명] |
+
+이런 식으로 최소 5개 이상의 카드를 만들어주고, 각 카드는 표 형태로 앞면과 뒷면을 명확히 구분해줘.`;
                     break;
                 case 'study_tips':
                     prompt = `현재 선택된 성취기준 코드 [${selectedCode}]를 효과적으로 공부하고 시험에서 좋은 점수를 받을 수 있는 실전 대비 팁과 학습 전략을 알려줘.`;
